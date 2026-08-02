@@ -122,6 +122,18 @@ aws backup start-restore-job \
 
 Restore testing should be performed periodically (not just during an actual emergency) to confirm recovery points are valid and the process works as expected.
 
+## Testing & Validation
+
+This backup and restore workflow was tested end-to-end using a sandbox version of this template (no permanent Vault Lock, shorter retention) to safely validate the mechanics before relying on the production configuration:
+
+1. Deployed the sandbox stack (vault, IAM role, backup plan, tag-based selection).
+2. Created a test EBS volume tagged `Backup: true`.
+3. Triggered an on-demand backup job — completed successfully, producing a recovery point (snapshot).
+4. Triggered a restore job from that recovery point — completed successfully, producing a new, fully restored EBS volume.
+5. Cleaned up all test resources (volumes, recovery point, and sandbox stack) after validation.
+
+This confirms the complete backup-to-restore cycle works as designed, not just in theory.
+
 ## Requirements
 
 - AWS CLI configured with appropriate permissions
