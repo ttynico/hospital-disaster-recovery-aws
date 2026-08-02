@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Hospital Disaster Recovery Backup Infrastructure
+
+Resources:
+
+  HospitalBackupVault:
+    Type: AWS::Backup::BackupVault
+    Properties:
+      BackupVaultName: Hospital-Backup-Vault
+      LockConfiguration:
+        MinRetentionDays: 90
+        MaxRetentionDays: 90
+        ChangeableForDays: 3
+
+  BackupRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: HospitalBackupRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: backup.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup
+        - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores
+
+  HospitalBackupPlan:
+    Type: AWS::Backup::BackupPlan
+    Properties:
+      BackupPlan:
+        BackupPlanName: Hospital-Daily-Backup-Plan
+        BackupPlanRule:
+          - RuleName: DailyBackups
+            TargetBackupVault: !Ref HospitalBackupVault
+            ScheduleExpression: cron(0 5 * * ? *)
+            StartWindowMinutes: 60
+            CompletionWindowMinutes: 180
+            Lifecycle:
+              DeleteAfterDays: 90
+
+  HospitalBackupSelection:
+    Type: AWS::Backup::BackupSelection
+    Properties:
+      BackupPlanId: !Ref HospitalBackupPlan
+      BackupSelection:
+        SelectionName: TaggedResourcesSelection
+        IamRoleArn: !GetAtt BackupRole.Arn
+        ListOfTags:
+          - ConditionType: STRINGEQUALS
+            ConditionKey: Backup
+            ConditionValue: 'true'
+
+Outputs:
+
+  BackupVaultName:
+    Description: Name of the Backup Vault
+    Value: !Ref HospitalBackupVault
+
+  BackupPlanId:
+    Description: ID of the Backup Plan
+    Value: !Ref HospitalBackupPlan
