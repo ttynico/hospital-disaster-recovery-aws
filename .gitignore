@@ -1,0 +1,21 @@
+# AWS SAM / CloudFormation build artifacts
+.aws-sam/
+packaged-template.yaml
+*.zip
+
+# AWS CLI output
+*.out.json
+
+# Environment/credentials (never commit these)
+.env
+*.pem
+*.key
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE files
+.vscode/
+.idea/
+*.swp
