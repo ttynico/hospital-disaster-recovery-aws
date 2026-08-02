@@ -1,6 +1,78 @@
-# Hospital Disaster Recovery – AWS Backup Infrastructure
+# Hospital Disaster Recovery Using AWS Backup
 
-An AWS CloudFormation template implementing a tag-based, compliance-locked backup strategy for hospital infrastructure, using AWS Backup.
+## Project Overview
+
+This project demonstrates how I designed and tested a disaster recovery solution for a simulated hospital environment using AWS (Amazon Web Services).
+
+The goal was to protect critical patient records stored on an Amazon EBS (Elastic Block Store) volume and prove that the data could be restored after a ransomware attack, accidental deletion, corruption, or storage failure.
+
+## Business Scenario
+
+A hospital stores patient records on cloud-based infrastructure.
+
+These records may include:
+
+- Patient charts
+- Medication history
+- Laboratory results
+- MRI and X-ray records
+- Surgery schedules
+- Billing information
+
+A ransomware attack encrypts the hospital's primary storage volume, preventing doctors and nurses from accessing important patient information.
+
+As the Cloud Engineer, my responsibility was to create a secure backup and recovery system that would allow the hospital to restore patient data and continue operations.
+
+## Business Problem
+
+Without a reliable backup strategy, the hospital could experience:
+
+- Permanent loss of patient records
+- Delayed medical treatment
+- Extended system downtime
+- Operational disruption
+- Compliance risks
+- Financial loss
+- Damage to patient trust
+
+A backup is only valuable if it can be successfully restored. This project therefore includes both backup creation and a documented restore procedure.
+
+## Solution
+
+I created an AWS Backup disaster recovery workflow that:
+
+- Stores backups inside an encrypted, tamper-proof Backup Vault (Vault Lock, compliance mode)
+- Runs automated daily backups
+- Retains recovery points for 90 days
+- Uses tags to identify resources requiring protection
+- Supports immediate on-demand backups
+- Restores an Amazon EBS volume from a recovery point (via a documented, manual restore procedure — see below)
+
+## AWS Architecture
+```
+Doctors and Nurses
+        |
+        v
+Amazon EC2 Application Server
+        |
+        v
+Amazon EBS Patient Records Volume
+        |
+        v
+AWS Backup Plan
+        |
+        v
+Encrypted Backup Vault
+        |
+        v
+Recovery Point / EBS Snapshot
+        |
+        v
+AWS Restore Job
+        |
+        v
+Recovered Amazon EBS Volume
+```
 
 ## What This Deploys
 
@@ -36,6 +108,19 @@ If you want to test the mechanics first without a permanent lock, deploy to a se
 ```
 
 3. Backups will run automatically every day at 5:00 AM UTC for any tagged resource, and expire after 90 days.
+
+## Restore Procedure (Manual)
+
+Restoring is not automated by this template — it's performed on demand when needed, either through the AWS Backup console or CLI:
+
+```bash
+aws backup start-restore-job \
+  --recovery-point-arn <RECOVERY_POINT_ARN> \
+  --iam-role-arn <BACKUP_ROLE_ARN> \
+  --metadata '{"file-system-id":"<TARGET_VOLUME_ID>"}'
+```
+
+Restore testing should be performed periodically (not just during an actual emergency) to confirm recovery points are valid and the process works as expected.
 
 ## Requirements
 
